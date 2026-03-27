@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>URL Auto-Corrector & Redirector</title>
+    <title>URL Redirector</title>
     <style>
         * {
             margin: 0;
@@ -26,7 +26,7 @@
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             padding: 40px;
-            max-width: 600px;
+            max-width: 500px;
             width: 100%;
             animation: fadeIn 0.5s ease-out;
         }
@@ -103,43 +103,6 @@
             transform: translateY(0);
         }
 
-        .correction-preview {
-            margin-top: 20px;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            border-left: 4px solid #667eea;
-            display: none;
-        }
-
-        .correction-preview.show {
-            display: block;
-            animation: slideDown 0.3s ease-out;
-        }
-
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .original-url {
-            color: #666;
-            font-size: 14px;
-            margin-bottom: 8px;
-        }
-
-        .corrected-url {
-            color: #28a745;
-            font-weight: 600;
-            word-break: break-all;
-        }
-
         .error-message {
             color: #dc3545;
             margin-top: 10px;
@@ -194,268 +157,83 @@
 </head>
 <body>
     <div class="container">
-        <h1>🌐 URL Auto-Corrector</h1>
-        <div class="subtitle">Enter any URL — common mistakes will be fixed automatically</div>
+        <h1>🌐 URL Redirector</h1>
+        <div class="subtitle">Enter a URL and click the button to redirect</div>
 
         <div class="input-group">
             <label for="urlInput">Enter URL:</label>
-            <input type="text" id="urlInput" placeholder="e.g., github..com, https:/google.com, example.c0m">
+            <input type="text" id="urlInput" placeholder="e.g., https://www.google.com or google.com">
         </div>
 
-        <button id="redirectBtn">🚀 Redirect to Corrected URL</button>
-
-        <div id="correctionPreview" class="correction-preview">
-            <div class="original-url">🔍 Original: <span id="originalUrl"></span></div>
-            <div class="corrected-url">✅ Corrected: <span id="correctedUrl"></span></div>
-        </div>
+        <button id="redirectBtn">🚀 Redirect to URL</button>
 
         <div id="errorMessage" class="error-message">
             ⚠️ <span id="errorText"></span>
         </div>
 
         <div class="examples">
-            <h3>📋 Try these examples (click to test):</h3>
+            <h3>📋 Example URLs (click to test):</h3>
             <div class="example-buttons">
-                <div class="example-btn" data-url="github..com">github..com</div>
-                <div class="example-btn" data-url="https:/google.com">https:/google.com</div>
-                <div class="example-btn" data-url="www.yahoo..co">www.yahoo..co</div>
-                <div class="example-btn" data-url="example.c0m">example.c0m</div>
-                <div class="example-btn" data-url="stackoverflw.com">stackoverflw.com</div>
-                <div class="example-btn" data-url="http//reddit.com">http//reddit.com</div>
+                <div class="example-btn" data-url="https://www.google.com">https://www.google.com</div>
+                <div class="example-btn" data-url="https://github.com">https://github.com</div>
+                <div class="example-btn" data-url="https://www.wikipedia.org">https://www.wikipedia.org</div>
+                <div class="example-btn" data-url="https://stackoverflow.com">https://stackoverflow.com</div>
             </div>
         </div>
         <div class="info">
-            💡 Auto-corrects: double dots, missing slashes, common typos (c0m → com), and more
+            💡 Enter a full URL (including https://) for best results
         </div>
     </div>
 
     <script>
-        // Common domain typos mapping
-        const commonTypos = {
-            'c0m': 'com',
-            'c0m.': 'com.',
-            'c om': 'com',
-            'con': 'com',
-            'coom': 'com',
-            'ocm': 'com',
-            'copm': 'com',
-            'gom': 'com',
-            'vom': 'com',
-            'xom': 'com',
-            'zom': 'com',
-            'cim': 'com',
-            'cum': 'com',
-            'cpm': 'com',
-            'c0m': 'com',
-            'c0m.': 'com.',
-            'org.': 'org',
-            'net.': 'net',
-            'gov.': 'gov',
-            'edu.': 'edu',
-            'info.': 'info',
-            'io.': 'io',
-            // Missing letters
-            'googl': 'google',
-            'githu': 'github',
-            'faceboo': 'facebook',
-            'twitte': 'twitter',
-            'youtub': 'youtube',
-            'linkdin': 'linkedin',
-            'stackoverflw': 'stackoverflow',
-            'reddit.': 'reddit',
-            'amazo': 'amazon',
-            'microsof': 'microsoft',
-            'appl': 'apple'
-        };
-
         const urlInput = document.getElementById('urlInput');
         const redirectBtn = document.getElementById('redirectBtn');
-        const correctionPreview = document.getElementById('correctionPreview');
-        const originalUrlSpan = document.getElementById('originalUrl');
-        const correctedUrlSpan = document.getElementById('correctedUrl');
         const errorMessage = document.getElementById('errorMessage');
         const errorText = document.getElementById('errorText');
 
-        // Auto-correct function
-        // function autoCorrectUrl(input) {
-        //     if (!input || input.trim() === '') {
-        //         return { corrected: '', errors: ['Please enter a URL'] };
-        //     }
-
-        //     let url = input.trim();
-        //     let corrections = [];
-        //     let original = url;
-
-        //     // Remove any extra whitespace
-        //     url = url.replace(/\s+/g, '');
-
-        //     // Fix double dots (github..com -> github.com)
-        //     if (url.includes('..')) {
-        //         corrections.push('Fixed double dots');
-        //         url = url.replace(/\.\.+/g, '.');
-        //     }
-
-        //     // Fix missing colon in protocol (http// -> http://)
-        //     if (url.match(/^https?:\/\//i)) {
-        //         // Already has protocol
-        //     } else if (url.match(/^https?:\/\//i)) {
-        //         // Fix missing colon
-        //         url = url.replace(/^https?:\/\//i, function(match) {
-        //             return match.replace(/:\//, '://');
-        //         });
-        //     } else if (url.match(/^https?\/\//i)) {
-        //         corrections.push('Added missing colon in protocol');
-        //         url = url.replace(/^https?\/\//i, function(match) {
-        //             return match.replace(/\//, '://');
-        //         });
-        //     }
-
-        //     // Add https:// if no protocol is present
-        //     if (!url.match(/^[a-zA-Z][a-zA-Z0-9+.-]*:/) && !url.startsWith('//')) {
-        //         corrections.push('Added https:// protocol');
-        //         url = 'https://' + url;
-        //     }
-
-        //     // Fix common typos in domain (case insensitive)
-        //     let urlLower = url.toLowerCase();
-        //     let hasTypoFix = false;
-            
-        //     for (const [typo, correct] of Object.entries(commonTypos)) {
-        //         if (urlLower.includes(typo)) {
-        //             const regex = new RegExp(typo, 'gi');
-        //             const newUrl = url.replace(regex, correct);
-        //             if (newUrl !== url) {
-        //                 corrections.push(`Fixed typo: "${typo}" → "${correct}"`);
-        //                 url = newUrl;
-        //                 urlLower = url.toLowerCase();
-        //                 hasTypoFix = true;
-        //             }
-        //         }
-        //     }
-
-        //     // Fix common TLD typos (e.g., .c0m -> .com)
-        //     const tldPatterns = [
-        //         { pattern: /\.c0m\b/gi, replacement: '.com' },
-        //         { pattern: /\.c0m\./gi, replacement: '.com.' },
-        //         { pattern: /\.con\b/gi, replacement: '.com' },
-        //         { pattern: /\.coom\b/gi, replacement: '.com' },
-        //         { pattern: /\.ocm\b/gi, replacement: '.com' },
-        //         { pattern: /\.copm\b/gi, replacement: '.com' },
-        //         { pattern: /\.org\./gi, replacement: '.org' },
-        //         { pattern: /\.net\./gi, replacement: '.net' },
-        //         { pattern: /\.gov\./gi, replacement: '.gov' }
-        //     ];
-
-        //     for (const { pattern, replacement } of tldPatterns) {
-        //         if (pattern.test(url)) {
-        //             url = url.replace(pattern, replacement);
-        //             corrections.push('Fixed TLD spelling');
-        //             break;
-        //         }
-        //     }
-
-        //     // Remove duplicate protocols (https://https://example.com)
-        //     const protocolRegex = /^(https?:\/\/)+/i;
-        //     if (protocolRegex.test(url)) {
-        //         url = url.replace(protocolRegex, '$1');
-        //         corrections.push('Removed duplicate protocol');
-        //     }
-
-        //     // Validate URL structure
-        //     try {
-        //         // Attempt to parse to ensure it's valid
-        //         const testUrl = new URL(url);
-                
-        //         // Additional validation for domain
-        //         const hostname = testUrl.hostname;
-        //         if (!hostname || hostname.length < 3) {
-        //             return { corrected: '', errors: ['Invalid domain name'] };
-        //         }
-                
-        //         // Check if TLD is valid (basic check)
-        //         const parts = hostname.split('.');
-        //         if (parts.length < 2) {
-        //             return { corrected: '', errors: ['URL must contain a domain extension (e.g., .com, .org)'] };
-        //         }
-                
-        //         const lastPart = parts[parts.length - 1];
-        //         if (!lastPart.match(/^[a-zA-Z]{2,}$/)) {
-        //             corrections.push('Note: Unusual TLD format');
-        //         }
-                
-        //         return {
-        //             corrected: url,
-        //             errors: [],
-        //             corrections: corrections,
-        //             wasCorrected: corrections.length > 0
-        //         };
-        //     } catch (e) {
-        //         // If URL parsing fails, try one more fix: add https:// if missing protocol
-        //         if (!url.match(/^[a-zA-Z][a-zA-Z0-9+.-]*:/)) {
-        //             const retryUrl = 'https://' + url;
-        //             try {
-        //                 new URL(retryUrl);
-        //                 return {
-        //                     corrected: retryUrl,
-        //                     errors: [],
-        //                     corrections: [...corrections, 'Added missing protocol'],
-        //                     wasCorrected: true
-        //                 };
-        //             } catch (retryErr) {
-        //                 return { corrected: '', errors: ['Invalid URL format. Please check your input.'], corrections: [] };
-        //             }
-        //         }
-        //         return { corrected: '', errors: ['Invalid URL format. Please check your input.'], corrections: [] };
-        //     }
-        // }
-
-        // Update preview
-        function updatePreview() {
-            const input = urlInput.value;
-            if (!input) {
-                correctionPreview.classList.remove('show');
-                errorMessage.classList.remove('show');
-                return;
-            }
-
-            const result = input;
-            
-            if (result.errors.length > 0) {
-                correctionPreview.classList.remove('show');
-                errorText.textContent = result.errors.join(', ');
-                errorMessage.classList.add('show');
-            } else {
-                errorMessage.classList.remove('show');
-                originalUrlSpan.textContent = input;
-                correctedUrlSpan.textContent = result.corrected;
-                correctionPreview.classList.add('show');
-            }
-        }
-
-        // Redirect to corrected URL
+        // Validate URL and redirect
         function redirectToUrl() {
-            const input = urlInput.value;
+            const input = urlInput.value.trim();
+            
             if (!input) {
                 errorText.textContent = 'Please enter a URL';
                 errorMessage.classList.add('show');
                 return;
             }
 
-            const result = input;
+            let url = input;
             
-            if (result.errors.length > 0) {
-                errorText.textContent = result.errors.join(', ');
-                errorMessage.classList.add('show');
-                correctionPreview.classList.remove('show');
-                return;
+            // Add https:// if no protocol is specified
+            if (!url.match(/^[a-zA-Z][a-zA-Z0-9+.-]*:/) && !url.startsWith('//')) {
+                url = 'https://' + url;
             }
-
-            // Show loading state
-            redirectBtn.textContent = '⏳ Redirecting...';
-            redirectBtn.disabled = true;
             
-            // Redirect to corrected URL
-            window.location.href = result.corrected;
+            // Validate URL format
+            try {
+                const testUrl = new URL(url);
+                
+                // Basic domain validation
+                const hostname = testUrl.hostname;
+                if (!hostname || hostname.length < 3) {
+                    errorText.textContent = 'Invalid domain name';
+                    errorMessage.classList.add('show');
+                    return;
+                }
+                
+                // Hide any previous error
+                errorMessage.classList.remove('show');
+                
+                // Show loading state
+                redirectBtn.textContent = '⏳ Redirecting...';
+                redirectBtn.disabled = true;
+                
+                // Redirect to the URL
+                window.location.href = url;
+                
+            } catch (e) {
+                errorText.textContent = 'Invalid URL format. Please include a valid domain (e.g., example.com)';
+                errorMessage.classList.add('show');
+            }
         }
 
         // Handle Enter key
@@ -465,8 +243,10 @@
             }
         });
 
-        // Update preview on input
-        urlInput.addEventListener('input', updatePreview);
+        // Clear error when user starts typing
+        urlInput.addEventListener('input', () => {
+            errorMessage.classList.remove('show');
+        });
 
         // Redirect button click
         redirectBtn.addEventListener('click', redirectToUrl);
@@ -476,7 +256,7 @@
             btn.addEventListener('click', () => {
                 const exampleUrl = btn.dataset.url;
                 urlInput.value = exampleUrl;
-                updatePreview();
+                errorMessage.classList.remove('show');
                 urlInput.focus();
             });
         });
