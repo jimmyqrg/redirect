@@ -277,137 +277,137 @@
         const errorText = document.getElementById('errorText');
 
         // Auto-correct function
-        function autoCorrectUrl(input) {
-            if (!input || input.trim() === '') {
-                return { corrected: '', errors: ['Please enter a URL'] };
-            }
+        // function autoCorrectUrl(input) {
+        //     if (!input || input.trim() === '') {
+        //         return { corrected: '', errors: ['Please enter a URL'] };
+        //     }
 
-            let url = input.trim();
-            let corrections = [];
-            let original = url;
+        //     let url = input.trim();
+        //     let corrections = [];
+        //     let original = url;
 
-            // Remove any extra whitespace
-            url = url.replace(/\s+/g, '');
+        //     // Remove any extra whitespace
+        //     url = url.replace(/\s+/g, '');
 
-            // Fix double dots (github..com -> github.com)
-            if (url.includes('..')) {
-                corrections.push('Fixed double dots');
-                url = url.replace(/\.\.+/g, '.');
-            }
+        //     // Fix double dots (github..com -> github.com)
+        //     if (url.includes('..')) {
+        //         corrections.push('Fixed double dots');
+        //         url = url.replace(/\.\.+/g, '.');
+        //     }
 
-            // Fix missing colon in protocol (http// -> http://)
-            if (url.match(/^https?:\/\//i)) {
-                // Already has protocol
-            } else if (url.match(/^https?:\/\//i)) {
-                // Fix missing colon
-                url = url.replace(/^https?:\/\//i, function(match) {
-                    return match.replace(/:\//, '://');
-                });
-            } else if (url.match(/^https?\/\//i)) {
-                corrections.push('Added missing colon in protocol');
-                url = url.replace(/^https?\/\//i, function(match) {
-                    return match.replace(/\//, '://');
-                });
-            }
+        //     // Fix missing colon in protocol (http// -> http://)
+        //     if (url.match(/^https?:\/\//i)) {
+        //         // Already has protocol
+        //     } else if (url.match(/^https?:\/\//i)) {
+        //         // Fix missing colon
+        //         url = url.replace(/^https?:\/\//i, function(match) {
+        //             return match.replace(/:\//, '://');
+        //         });
+        //     } else if (url.match(/^https?\/\//i)) {
+        //         corrections.push('Added missing colon in protocol');
+        //         url = url.replace(/^https?\/\//i, function(match) {
+        //             return match.replace(/\//, '://');
+        //         });
+        //     }
 
-            // Add https:// if no protocol is present
-            if (!url.match(/^[a-zA-Z][a-zA-Z0-9+.-]*:/) && !url.startsWith('//')) {
-                corrections.push('Added https:// protocol');
-                url = 'https://' + url;
-            }
+        //     // Add https:// if no protocol is present
+        //     if (!url.match(/^[a-zA-Z][a-zA-Z0-9+.-]*:/) && !url.startsWith('//')) {
+        //         corrections.push('Added https:// protocol');
+        //         url = 'https://' + url;
+        //     }
 
-            // Fix common typos in domain (case insensitive)
-            let urlLower = url.toLowerCase();
-            let hasTypoFix = false;
+        //     // Fix common typos in domain (case insensitive)
+        //     let urlLower = url.toLowerCase();
+        //     let hasTypoFix = false;
             
-            for (const [typo, correct] of Object.entries(commonTypos)) {
-                if (urlLower.includes(typo)) {
-                    const regex = new RegExp(typo, 'gi');
-                    const newUrl = url.replace(regex, correct);
-                    if (newUrl !== url) {
-                        corrections.push(`Fixed typo: "${typo}" → "${correct}"`);
-                        url = newUrl;
-                        urlLower = url.toLowerCase();
-                        hasTypoFix = true;
-                    }
-                }
-            }
+        //     for (const [typo, correct] of Object.entries(commonTypos)) {
+        //         if (urlLower.includes(typo)) {
+        //             const regex = new RegExp(typo, 'gi');
+        //             const newUrl = url.replace(regex, correct);
+        //             if (newUrl !== url) {
+        //                 corrections.push(`Fixed typo: "${typo}" → "${correct}"`);
+        //                 url = newUrl;
+        //                 urlLower = url.toLowerCase();
+        //                 hasTypoFix = true;
+        //             }
+        //         }
+        //     }
 
-            // Fix common TLD typos (e.g., .c0m -> .com)
-            const tldPatterns = [
-                { pattern: /\.c0m\b/gi, replacement: '.com' },
-                { pattern: /\.c0m\./gi, replacement: '.com.' },
-                { pattern: /\.con\b/gi, replacement: '.com' },
-                { pattern: /\.coom\b/gi, replacement: '.com' },
-                { pattern: /\.ocm\b/gi, replacement: '.com' },
-                { pattern: /\.copm\b/gi, replacement: '.com' },
-                { pattern: /\.org\./gi, replacement: '.org' },
-                { pattern: /\.net\./gi, replacement: '.net' },
-                { pattern: /\.gov\./gi, replacement: '.gov' }
-            ];
+        //     // Fix common TLD typos (e.g., .c0m -> .com)
+        //     const tldPatterns = [
+        //         { pattern: /\.c0m\b/gi, replacement: '.com' },
+        //         { pattern: /\.c0m\./gi, replacement: '.com.' },
+        //         { pattern: /\.con\b/gi, replacement: '.com' },
+        //         { pattern: /\.coom\b/gi, replacement: '.com' },
+        //         { pattern: /\.ocm\b/gi, replacement: '.com' },
+        //         { pattern: /\.copm\b/gi, replacement: '.com' },
+        //         { pattern: /\.org\./gi, replacement: '.org' },
+        //         { pattern: /\.net\./gi, replacement: '.net' },
+        //         { pattern: /\.gov\./gi, replacement: '.gov' }
+        //     ];
 
-            for (const { pattern, replacement } of tldPatterns) {
-                if (pattern.test(url)) {
-                    url = url.replace(pattern, replacement);
-                    corrections.push('Fixed TLD spelling');
-                    break;
-                }
-            }
+        //     for (const { pattern, replacement } of tldPatterns) {
+        //         if (pattern.test(url)) {
+        //             url = url.replace(pattern, replacement);
+        //             corrections.push('Fixed TLD spelling');
+        //             break;
+        //         }
+        //     }
 
-            // Remove duplicate protocols (https://https://example.com)
-            const protocolRegex = /^(https?:\/\/)+/i;
-            if (protocolRegex.test(url)) {
-                url = url.replace(protocolRegex, '$1');
-                corrections.push('Removed duplicate protocol');
-            }
+        //     // Remove duplicate protocols (https://https://example.com)
+        //     const protocolRegex = /^(https?:\/\/)+/i;
+        //     if (protocolRegex.test(url)) {
+        //         url = url.replace(protocolRegex, '$1');
+        //         corrections.push('Removed duplicate protocol');
+        //     }
 
-            // Validate URL structure
-            try {
-                // Attempt to parse to ensure it's valid
-                const testUrl = new URL(url);
+        //     // Validate URL structure
+        //     try {
+        //         // Attempt to parse to ensure it's valid
+        //         const testUrl = new URL(url);
                 
-                // Additional validation for domain
-                const hostname = testUrl.hostname;
-                if (!hostname || hostname.length < 3) {
-                    return { corrected: '', errors: ['Invalid domain name'] };
-                }
+        //         // Additional validation for domain
+        //         const hostname = testUrl.hostname;
+        //         if (!hostname || hostname.length < 3) {
+        //             return { corrected: '', errors: ['Invalid domain name'] };
+        //         }
                 
-                // Check if TLD is valid (basic check)
-                const parts = hostname.split('.');
-                if (parts.length < 2) {
-                    return { corrected: '', errors: ['URL must contain a domain extension (e.g., .com, .org)'] };
-                }
+        //         // Check if TLD is valid (basic check)
+        //         const parts = hostname.split('.');
+        //         if (parts.length < 2) {
+        //             return { corrected: '', errors: ['URL must contain a domain extension (e.g., .com, .org)'] };
+        //         }
                 
-                const lastPart = parts[parts.length - 1];
-                if (!lastPart.match(/^[a-zA-Z]{2,}$/)) {
-                    corrections.push('Note: Unusual TLD format');
-                }
+        //         const lastPart = parts[parts.length - 1];
+        //         if (!lastPart.match(/^[a-zA-Z]{2,}$/)) {
+        //             corrections.push('Note: Unusual TLD format');
+        //         }
                 
-                return {
-                    corrected: url,
-                    errors: [],
-                    corrections: corrections,
-                    wasCorrected: corrections.length > 0
-                };
-            } catch (e) {
-                // If URL parsing fails, try one more fix: add https:// if missing protocol
-                if (!url.match(/^[a-zA-Z][a-zA-Z0-9+.-]*:/)) {
-                    const retryUrl = 'https://' + url;
-                    try {
-                        new URL(retryUrl);
-                        return {
-                            corrected: retryUrl,
-                            errors: [],
-                            corrections: [...corrections, 'Added missing protocol'],
-                            wasCorrected: true
-                        };
-                    } catch (retryErr) {
-                        return { corrected: '', errors: ['Invalid URL format. Please check your input.'], corrections: [] };
-                    }
-                }
-                return { corrected: '', errors: ['Invalid URL format. Please check your input.'], corrections: [] };
-            }
-        }
+        //         return {
+        //             corrected: url,
+        //             errors: [],
+        //             corrections: corrections,
+        //             wasCorrected: corrections.length > 0
+        //         };
+        //     } catch (e) {
+        //         // If URL parsing fails, try one more fix: add https:// if missing protocol
+        //         if (!url.match(/^[a-zA-Z][a-zA-Z0-9+.-]*:/)) {
+        //             const retryUrl = 'https://' + url;
+        //             try {
+        //                 new URL(retryUrl);
+        //                 return {
+        //                     corrected: retryUrl,
+        //                     errors: [],
+        //                     corrections: [...corrections, 'Added missing protocol'],
+        //                     wasCorrected: true
+        //                 };
+        //             } catch (retryErr) {
+        //                 return { corrected: '', errors: ['Invalid URL format. Please check your input.'], corrections: [] };
+        //             }
+        //         }
+        //         return { corrected: '', errors: ['Invalid URL format. Please check your input.'], corrections: [] };
+        //     }
+        // }
 
         // Update preview
         function updatePreview() {
