@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Auto-Corrector & Redirector</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px 16px;
+            font-size: 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            transition: all 0.3s;
+            font-family: monospace;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .correction-preview {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+            display: none;
+        }
+
+        .correction-preview.show {
+            display: block;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .original-url {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .corrected-url {
+            color: #28a745;
+            font-weight: 600;
+            word-break: break-all;
+        }
+
+        .error-message {
+            color: #dc3545;
+            margin-top: 10px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .examples {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .examples h3 {
+            color: #555;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .example-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .example-btn {
+            background: #f0f0f0;
+            color: #667eea;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-family: monospace;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .example-btn:hover {
+            background: #e0e0e0;
+        }
+
+        .info {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #999;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌐 URL Auto-Corrector</h1>
+        <div class="subtitle">Enter any URL — common mistakes will be fixed automatically</div>
+
+        <div class="input-group">
+            <label for="urlInput">Enter URL:</label>
+            <input type="text" id="urlInput" placeholder="e.g., github..com, https:/google.com, example.c0m">
+        </div>
+
+        <button id="redirectBtn">🚀 Redirect to Corrected URL</button>
+
+        <div id="correctionPreview" class="correction-preview">
+            <div class="original-url">🔍 Original: <span id="originalUrl"></span></div>
+            <div class="corrected-url">✅ Corrected: <span id="correctedUrl"></span></div>
+        </div>
+
+        <div id="errorMessage" class="error-message">
+            ⚠️ <span id="errorText"></span>
+        </div>
+
+        <div class="examples">
+            <h3>📋 Try these examples (click to test):</h3>
+            <div class="example-buttons">
+                <div class="example-btn" data-url="github..com">github..com</div>
+                <div class="example-btn" data-url="https:/google.com">https:/google.com</div>
+                <div class="example-btn" data-url="www.yahoo..co">www.yahoo..co</div>
+                <div class="example-btn" data-url="example.c0m">example.c0m</div>
+                <div class="example-btn" data-url="stackoverflw.com">stackoverflw.com</div>
+                <div class="example-btn" data-url="http//reddit.com">http//reddit.com</div>
+            </div>
+        </div>
+        <div class="info">
+            💡 Auto-corrects: double dots, missing slashes, common typos (c0m → com), and more
+        </div>
+    </div>
+
+    <script>
+        // Common domain typos mapping
+        const commonTypos = {
+            'c0m': 'com',
+            'c0m.': 'com.',
+            'c om': 'com',
+            'con': 'com',
+            'coom': 'com',
+            'ocm': 'com',
+            'copm': 'com',
+            'gom': 'com',
+            'vom': 'com',
+            'xom': 'com',
+            'zom': 'com',
+            'cim': 'com',
+            'cum': 'com',
+            'cpm': 'com',
+            'c0m': 'com',
+            'c0m.': 'com.',
+            'org.': 'org',
+            'net.': 'net',
+            'gov.': 'gov',
+            'edu.': 'edu',
+            'info.': 'info',
+            'io.': 'io',
+            // Missing letters
+            'googl': 'google',
+            'githu': 'github',
+            'faceboo': 'facebook',
+            'twitte': 'twitter',
+            'youtub': 'youtube',
+            'linkdin': 'linkedin',
+            'stackoverflw': 'stackoverflow',
+            'reddit.': 'reddit',
+            'amazo': 'amazon',
+            'microsof': 'microsoft',
+            'appl': 'apple'
+        };
+
+        const urlInput = document.getElementById('urlInput');
+        const redirectBtn = document.getElementById('redirectBtn');
+        const correctionPreview = document.getElementById('correctionPreview');
+        const originalUrlSpan = document.getElementById('originalUrl');
+        const correctedUrlSpan = document.getElementById('correctedUrl');
+        const errorMessage = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
+
+        // Auto-correct function
+        function autoCorrectUrl(input) {
+            if (!input || input.trim() === '') {
+                return { corrected: '', errors: ['Please enter a URL'] };
+            }
+
+            let url = input.trim();
+            let corrections = [];
+            let original = url;
+
+            // Remove any extra whitespace
+            url = url.replace(/\s+/g, '');
+
+            // Fix double dots (github..com -> github.com)
+            if (url.includes('..')) {
+                corrections.push('Fixed double dots');
+                url = url.replace(/\.\.+/g, '.');
+            }
+
+            // Fix missing colon in protocol (http// -> http://)
+            if (url.match(/^https?:\/\//i)) {
+                // Already has protocol
+            } else if (url.match(/^https?:\/\//i)) {
+                // Fix missing colon
+                url = url.replace(/^https?:\/\//i, function(match) {
+                    return match.replace(/:\//, '://');
+                });
+            } else if (url.match(/^https?\/\//i)) {
+                corrections.push('Added missing colon in protocol');
+                url = url.replace(/^https?\/\//i, function(match) {
+                    return match.replace(/\//, '://');
+                });
+            }
+
+            // Add https:// if no protocol is present
+            if (!url.match(/^[a-zA-Z][a-zA-Z0-9+.-]*:/) && !url.startsWith('//')) {
+                corrections.push('Added https:// protocol');
+                url = 'https://' + url;
+            }
+
+            // Fix common typos in domain (case insensitive)
+            let urlLower = url.toLowerCase();
+            let hasTypoFix = false;
+            
+            for (const [typo, correct] of Object.entries(commonTypos)) {
+                if (urlLower.includes(typo)) {
+                    const regex = new RegExp(typo, 'gi');
+                    const newUrl = url.replace(regex, correct);
+                    if (newUrl !== url) {
+                        corrections.push(`Fixed typo: "${typo}" → "${correct}"`);
+                        url = newUrl;
+                        urlLower = url.toLowerCase();
+                        hasTypoFix = true;
+                    }
+                }
+            }
+
+            // Fix common TLD typos (e.g., .c0m -> .com)
+            const tldPatterns = [
+                { pattern: /\.c0m\b/gi, replacement: '.com' },
+                { pattern: /\.c0m\./gi, replacement: '.com.' },
+                { pattern: /\.con\b/gi, replacement: '.com' },
+                { pattern: /\.coom\b/gi, replacement: '.com' },
+                { pattern: /\.ocm\b/gi, replacement: '.com' },
+                { pattern: /\.copm\b/gi, replacement: '.com' },
+                { pattern: /\.org\./gi, replacement: '.org' },
+                { pattern: /\.net\./gi, replacement: '.net' },
+                { pattern: /\.gov\./gi, replacement: '.gov' }
+            ];
+
+            for (const { pattern, replacement } of tldPatterns) {
+                if (pattern.test(url)) {
+                    url = url.replace(pattern, replacement);
+                    corrections.push('Fixed TLD spelling');
+                    break;
+                }
+            }
+
+            // Remove duplicate protocols (https://https://example.com)
+            const protocolRegex = /^(https?:\/\/)+/i;
+            if (protocolRegex.test(url)) {
+                url = url.replace(protocolRegex, '$1');
+                corrections.push('Removed duplicate protocol');
+            }
+
+            // Validate URL structure
+            try {
+                // Attempt to parse to ensure it's valid
+                const testUrl = new URL(url);
+                
+                // Additional validation for domain
+                const hostname = testUrl.hostname;
+                if (!hostname || hostname.length < 3) {
+                    return { corrected: '', errors: ['Invalid domain name'] };
+                }
+                
+                // Check if TLD is valid (basic check)
+                const parts = hostname.split('.');
+                if (parts.length < 2) {
+                    return { corrected: '', errors: ['URL must contain a domain extension (e.g., .com, .org)'] };
+                }
+                
+                const lastPart = parts[parts.length - 1];
+                if (!lastPart.match(/^[a-zA-Z]{2,}$/)) {
+                    corrections.push('Note: Unusual TLD format');
+                }
+                
+                return {
+                    corrected: url,
+                    errors: [],
+                    corrections: corrections,
+                    wasCorrected: corrections.length > 0
+                };
+            } catch (e) {
+                // If URL parsing fails, try one more fix: add https:// if missing protocol
+                if (!url.match(/^[a-zA-Z][a-zA-Z0-9+.-]*:/)) {
+                    const retryUrl = 'https://' + url;
+                    try {
+                        new URL(retryUrl);
+                        return {
+                            corrected: retryUrl,
+                            errors: [],
+                            corrections: [...corrections, 'Added missing protocol'],
+                            wasCorrected: true
+                        };
+                    } catch (retryErr) {
+                        return { corrected: '', errors: ['Invalid URL format. Please check your input.'], corrections: [] };
+                    }
+                }
+                return { corrected: '', errors: ['Invalid URL format. Please check your input.'], corrections: [] };
+            }
+        }
+
+        // Update preview
+        function updatePreview() {
+            const input = urlInput.value;
+            if (!input) {
+                correctionPreview.classList.remove('show');
+                errorMessage.classList.remove('show');
+                return;
+            }
+
+            const result = autoCorrectUrl(input);
+            
+            if (result.errors.length > 0) {
+                correctionPreview.classList.remove('show');
+                errorText.textContent = result.errors.join(', ');
+                errorMessage.classList.add('show');
+            } else {
+                errorMessage.classList.remove('show');
+                originalUrlSpan.textContent = input;
+                correctedUrlSpan.textContent = result.corrected;
+                correctionPreview.classList.add('show');
+            }
+        }
+
+        // Redirect to corrected URL
+        function redirectToUrl() {
+            const input = urlInput.value;
+            if (!input) {
+                errorText.textContent = 'Please enter a URL';
+                errorMessage.classList.add('show');
+                return;
+            }
+
+            const result = autoCorrectUrl(input);
+            
+            if (result.errors.length > 0) {
+                errorText.textContent = result.errors.join(', ');
+                errorMessage.classList.add('show');
+                correctionPreview.classList.remove('show');
+                return;
+            }
+
+            // Show loading state
+            redirectBtn.textContent = '⏳ Redirecting...';
+            redirectBtn.disabled = true;
+            
+            // Redirect to corrected URL
+            window.location.href = result.corrected;
+        }
+
+        // Handle Enter key
+        urlInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                redirectToUrl();
+            }
+        });
+
+        // Update preview on input
+        urlInput.addEventListener('input', updatePreview);
+
+        // Redirect button click
+        redirectBtn.addEventListener('click', redirectToUrl);
+
+        // Example buttons
+        document.querySelectorAll('.example-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const exampleUrl = btn.dataset.url;
+                urlInput.value = exampleUrl;
+                updatePreview();
+                urlInput.focus();
+            });
+        });
+
+        // Initial focus
+        urlInput.focus();
+    </script>
+</body>
+</html>
